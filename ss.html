@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secret Santa Picker</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #7dbbc3; /* Soft winter blue background */
+            text-align: center;
+            padding: 40px;
+            color: #333;
+        }
+
+        h1 {
+            color: #d32f2f; /* Festive red for the header */
+        }
+
+        form {
+            margin-bottom: 20px;
+        }
+
+        input[type='text'],
+        input[type='email'],
+        button {
+            padding: 10px;
+            margin: 10px;
+            border: none;
+            border-radius: 5px;
+            box-shadow: 0 4px 6px rgba(50, 50, 93, 0.11), 0 1px 3px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        button {
+            background-color: #4CAF50; /* Christmas green */
+            color: white;
+            cursor: pointer;
+        }
+
+        button:hover {
+            box-shadow: 0 7px 14px rgba(50, 50, 93, 0.1), 0 3px 6px rgba(0, 0, 0, 0.08);
+            transform: translateY(-2px);
+        }
+
+        #participants {
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 20px;
+            border-radius: 5px;
+            max-width: 300px;
+            margin: auto;
+            box-shadow: 0 4px 6px rgba(50, 50, 93, 0.11), 0 1px 3px rgba(0, 0, 0, 0.08);
+        }
+
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        li {
+            padding: 5px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        li:last-child {
+            border-bottom: none;
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            body {
+                padding: 20px;
+            }
+
+            #participants {
+                max-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Secret Santa Picker</h1>
+    <form id="santaForm">
+        <input type="text" id="name" placeholder="Name">
+        <input type="email" id="email" placeholder="Email">
+        <button type="submit">Add Participant</button>
+    </form>
+    <button id="assignSanta">Assign Secret Santa</button>
+    <div id="participants"></div>
+
+    <script type="text/javascript" src="https://cdn.emailjs.com/dist/email.min.js"></script>
+    <script type="text/javascript">
+        (function() {
+            emailjs.init("Byc5i3oWzCDHmhaki");
+        })();
+
+        let participants = [];
+
+        document.getElementById('santaForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+            if (name && email) {
+                participants.push({ name, email });
+                document.getElementById('name').value = '';
+                document.getElementById('email').value = '';
+                displayParticipants();
+            }
+        });
+
+        document.getElementById('assignSanta').addEventListener('click', function() {
+            assignSecretSanta();
+        });
+
+        function displayParticipants() {
+            const list = participants.map(p => `<li>${p.name} (${p.email})</li>`).join('');
+            document.getElementById('participants').innerHTML = `<ul>${list}</ul>`;
+        }
+
+	function assignSecretSanta() {
+		let shuffled = participants.slice();
+		let n = shuffled.length;
+	    
+		// Durstenfeld shuffle algorithm
+		for (let i = n - 1; i > 0; i--) {
+		    let j = Math.floor(Math.random() * (i + 1));
+		    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+		}
+	    
+		// Assign Secret Santa
+		for (let i = 0; i < n; i++) {
+		    // Find the next person in the array who is not the current person
+		    let nextIndex = (i + 1) % n;
+		    while (nextIndex === i) {
+			nextIndex = (nextIndex + 1) % n;
+		    }
+	    
+		    let giver = shuffled[i];
+		    let receiver = shuffled[nextIndex];
+		    // Here, 'Secret Santa' is used as the sender's name to maintain anonymity
+		    sendEmail(giver.email, receiver.name, 'Secret Santa');
+		}
+	    }
+
+	    function sendEmail(email, receiverName, senderName) {
+		var data = {
+			service_id: 'service_u8bbbbi',
+			template_id: 'template_hfnf2si', // Replace with your actual template ID
+			user_id: 'Byc5i3oWzCDHmhaki',
+			template_params: {
+			    'to_email': email,
+			    'to_name': receiverName,
+			    'from_name': senderName, // This should be the name of the Secret Santa sender
+			    'message': `You have been assigned to gift ${receiverName} in the Secret Santa event.`
+			}
+		    };
+	    
+		fetch('https://api.emailjs.com/api/v1.0/email/send', {
+		    method: 'POST',
+		    body: JSON.stringify(data),
+		    headers: {
+			'Content-Type': 'application/json'
+		    }
+		})
+		.then(response => {
+		    if(response.ok) {
+			alert('Email sent successfully to ' + email);
+		    } else {
+			response.json().then(json => {
+			    console.error('EmailJS error:', json);
+			    alert('Failed to send email to ' + email + ': ' + json.error);
+			});
+		    }
+		})
+		.catch(err => {
+		    console.error('EmailJS exception:', err);
+		    alert('Failed to send email to ' + email);
+		});
+	    }
+	    
+	    
+    </script>
+
+</body>
+</html>
